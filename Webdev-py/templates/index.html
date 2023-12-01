@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Solver</title>
+    <style>
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="mazeCanvas" width="800" height="800"></canvas>
+
+    <script>
+        const canvas = document.getElementById('mazeCanvas');
+        const ctx = canvas.getContext('2d');
+        const boxSize = 50;
+
+        const palette = ['#FFFFFF', '#000000', '#00ffff', '#ff00ff', '#AAAAAA'];
+
+        const labirin = [
+            [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+            [1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1],
+            [1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1],
+            [1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1],
+            [1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+            [1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1],
+            [1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1],
+            [1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1],
+            [1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1],
+            [1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1],
+            [1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1],
+            [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 2],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        ];
+
+        function drawMaze() {
+            for (let i = 0; i < labirin.length; i++) {
+                for (let j = 0; j < labirin[i].length; j++) {
+                    ctx.fillStyle = palette[labirin[i][j]];
+                    ctx.fillRect(j * boxSize, i * boxSize, boxSize, boxSize);
+                }
+            }
+        }
+
+        function exploreMaze(row, col, callback) {
+            if (labirin[row][col] === 2) {
+                callback(true);
+            } else if (labirin[row][col] === 0) {
+                labirin[row][col] = 3;
+                drawMaze();
+                setTimeout(() => {
+                    if (row < labirin.length - 1) {
+                        exploreMaze(row + 1, col, (result) => {
+                            if (result) {
+                                callback(true);
+                                return;
+                            }
+
+                            setTimeout(() => {
+                                if (row > 0) {
+                                    exploreMaze(row - 1, col, (result) => {
+                                        if (result) {
+                                            callback(true);
+                                            return;
+                                        }
+
+                                        setTimeout(() => {
+                                            if (col < labirin[row].length - 1) {
+                                                exploreMaze(row, col + 1, (result) => {
+                                                    if (result) {
+                                                        callback(true);
+                                                        return;
+                                                    }
+
+                                                    setTimeout(() => {
+                                                        if (col > 0) {
+                                                            exploreMaze(row, col - 1, (result) => {
+                                                                if (result) {
+                                                                    callback(true);
+                                                                    return;
+                                                                }
+
+                                                                labirin[row][col] = 4;
+                                                                drawMaze();
+                                                                setTimeout(() => {
+                                                                    callback(false);
+                                                                }, 100);
+                                                            });
+                                                        } else {
+                                                            labirin[row][col] = 4;
+                                                            drawMaze();
+                                                            setTimeout(() => {
+                                                                callback(false);
+                                                            }, 100);
+                                                        }
+                                                    }, 100);
+                                                });
+                                            } else {
+                                                labirin[row][col] = 4;
+                                                drawMaze();
+                                                setTimeout(() => {
+                                                    callback(false);
+                                                }, 100);
+                                            }
+                                        }, 100);
+                                    });
+                                } else {
+                                    labirin[row][col] = 4;
+                                    drawMaze();
+                                    setTimeout(() => {
+                                        callback(false);
+                                    }, 100);
+                                }
+                            }, 100);
+                        });
+                    } else {
+                        labirin[row][col] = 4;
+                        drawMaze();
+                        setTimeout(() => {
+                            callback(false);
+                        }, 100);
+                    }
+                }, 100);
+            } else {
+                callback(false);
+            }
+        }
+
+        function solveMaze() {
+            drawMaze();
+            exploreMaze(0, 1, (result) => {
+                if (result) {
+                    console.log("Labirin selesai");
+                } else {
+                    console.log("Labirin tidak bisa diselesaikan");
+                }
+            });
+        }
+
+        solveMaze();
+    </script>
+</body>
+
+</html>
